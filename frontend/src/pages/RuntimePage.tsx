@@ -35,6 +35,12 @@ export const RuntimePage: React.FC<RuntimePageProps> = ({
             QNN_ACTIVE • Snapdragon NPU
           </span>
         );
+      case 'QNN_SESSION_READY':
+        return (
+          <span className="rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3 py-1 text-xs font-mono font-semibold">
+            QNN_SESSION_READY • Ready
+          </span>
+        );
       case 'QNN_AVAILABLE':
         return (
           <span className="rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3 py-1 text-xs font-mono font-semibold">
@@ -121,6 +127,83 @@ export const RuntimePage: React.FC<RuntimePageProps> = ({
         >
           Re-Detect Hardware
         </button>
+      </div>
+
+      {/* Explicit Qualcomm Validation State Table */}
+      <div className="rounded-2xl border border-[#282c3f] bg-[#12141c] p-6 space-y-4">
+        <h4 className="text-sm font-bold text-white flex items-center gap-2">
+          <ShieldCheck size={16} className="text-blue-400" />
+          Qualcomm AI Runtime State Verification
+        </h4>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-[#202434] text-slate-400">
+                <th className="py-2.5 px-3 font-semibold uppercase tracking-wider text-[11px]">Property</th>
+                <th className="py-2.5 px-3 font-semibold uppercase tracking-wider text-[11px]">Status</th>
+                <th className="py-2.5 px-3 font-semibold uppercase tracking-wider text-[11px]">Details</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#202434]">
+              <tr>
+                <td className="py-2.5 px-3 font-medium text-slate-300">Embedding Model</td>
+                <td className="py-2.5 px-3 text-white font-mono font-semibold">{runtime?.active_model || 'all-MiniLM-L6-v2'}</td>
+                <td className="py-2.5 px-3 text-slate-400">Local SentenceTransformers / Target: Nomic Embed Text v1.5</td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3 font-medium text-slate-300">Execution Provider</td>
+                <td className="py-2.5 px-3 text-white font-mono font-semibold">{runtime?.active_runtime || 'PyTorch / CPU'}</td>
+                <td className="py-2.5 px-3 text-slate-400">CPUExecutionProvider active on development host</td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3 font-medium text-slate-300">Accelerator</td>
+                <td className="py-2.5 px-3 text-amber-300 font-mono font-semibold">{runtime?.active_device || 'Host CPU'}</td>
+                <td className="py-2.5 px-3 text-slate-400">Host CPU Fallback (Hexagon NPU targets Snapdragon)</td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3 font-medium text-slate-300">Qualcomm QNN</td>
+                <td className="py-2.5 px-3">
+                  <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${hardware?.qnn_available ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                    {hardware?.qnn_available ? 'Available' : 'Unavailable'}
+                  </span>
+                </td>
+                <td className="py-2.5 px-3 text-slate-400">QNNExecutionProvider registered in ONNX Runtime</td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3 font-medium text-slate-300">Qualcomm Hardware</td>
+                <td className="py-2.5 px-3">
+                  <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${isSnapdragon ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-300'}`}>
+                    {isSnapdragon ? 'Detected' : 'Not detected'}
+                  </span>
+                </td>
+                <td className="py-2.5 px-3 text-slate-400">Physical Snapdragon X Elite / Plus host detection</td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3 font-medium text-slate-300">Status</td>
+                <td className="py-2.5 px-3">
+                  <span className="px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-amber-500/20 text-amber-300">
+                    {runtimeState}
+                  </span>
+                </td>
+                <td className="py-2.5 px-3 text-slate-400">Active RecallX engine operating state</td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3 font-medium text-slate-300">Cloud Requests</td>
+                <td className="py-2.5 px-3 text-emerald-400 font-mono font-bold">0</td>
+                <td className="py-2.5 px-3 text-slate-400">Zero cloud API network calls guarantee</td>
+              </tr>
+              <tr>
+                <td className="py-2.5 px-3 font-medium text-slate-300">Snapdragon Validation</td>
+                <td className="py-2.5 px-3">
+                  <span className={`px-2 py-0.5 rounded text-[11px] font-semibold ${isQnn ? 'bg-emerald-500/20 text-emerald-400' : 'bg-blue-500/20 text-blue-300'}`}>
+                    {isQnn ? 'Verified' : 'Pending'}
+                  </span>
+                </td>
+                <td className="py-2.5 px-3 text-slate-400">Hardware validation on physical Snapdragon machine</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Hardware Information Grid */}
@@ -233,7 +316,7 @@ export const RuntimePage: React.FC<RuntimePageProps> = ({
         <p className="text-xs text-slate-300 leading-relaxed">
           RecallX implements a clean provider abstraction: <code className="text-blue-300">EmbeddingProvider</code>{' '}
           with dedicated <code className="text-blue-300">LocalCPUProvider</code> and{' '}
-          <code className="text-rose-300">QualcommQNNProvider</code> implementations. When running on Snapdragon
+          <code className="text-rose-300">QualcommQNNEmbeddingProvider</code> implementations. When running on Snapdragon
           hardware (e.g. Snapdragon X Elite), the application binds directly to{' '}
           <strong className="text-white">QnnHtp.dll</strong> for sub-5 millisecond embedding latency on the Hexagon NPU.
         </p>
@@ -254,7 +337,7 @@ export const RuntimePage: React.FC<RuntimePageProps> = ({
           <div className="p-3 rounded-xl bg-[#0c0e15] border border-[#202434]">
             <span className="text-[10px] text-slate-500 block uppercase">Active Execution Device</span>
             <strong className="text-xs text-amber-300 block mt-0.5">
-              {runtime?.active_device || 'CPU (Fallback)'}
+              {runtime?.active_device || 'Host CPU (Fallback)'}
             </strong>
           </div>
         </div>

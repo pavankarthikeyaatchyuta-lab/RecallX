@@ -95,3 +95,4 @@ class BenchmarkMetrics(BaseModel):
     samples_count: int = 5
     status: str
     runtime_state: str = "CPU_FALLBACK"
+    snapdragon_validation: str = "pending"

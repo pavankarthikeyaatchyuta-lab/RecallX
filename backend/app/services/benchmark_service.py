@@ -1,5 +1,6 @@
 import json
 import time
+import uuid
 from datetime import datetime
 from pathlib import Path
 from PIL import Image, ImageDraw
@@ -17,10 +18,10 @@ from backend.app.search.vector_index import vector_index
 class BenchmarkService:
     def run_benchmark(self, num_samples: int = 5) -> BenchmarkMetrics:
         """
-        Executes real, honest latency measurements across:
+        Executes real, provider-agnostic, honest latency measurements across:
         - Cold-start model load & JIT compilation
-        - Warm steady-state single-query embedding
-        - Batch embedding throughput (ms/item)
+        - Warm steady-state single-query embedding (measured via public ModelManager API)
+        - Batch embedding throughput (ms/item via public ModelManager API)
         - Vector search alone (NumPy cosine retrieval)
         - Full hybrid search (query embed + vector + keyword + recency + snippets)
         - OCR text extraction
@@ -30,9 +31,9 @@ class BenchmarkService:
         """
         hw = detect_hardware()
         status = model_manager.get_runtime_status()
+        is_npu_verified = status.get("is_npu_active", False)
 
         # 1. Measure Cold Start Load / JIT Latency
-        # If model is already loaded, warm up and measure a fresh inference baseline
         t_cold_start = time.perf_counter()
         _ = model_manager.warmup()
         cold_start_ms = round((time.perf_counter() - t_cold_start) * 1000, 2)
@@ -52,52 +53,40 @@ class BenchmarkService:
 
         avg_ocr = round(float(np.mean(ocr_latencies)), 2)
 
-        # 3. Warm Single-Query Embedding Latency Benchmark
-        # Use unique strings to measure honest inference rather than instantaneous dict lookup
+        # 3. Warm Single-Query Embedding Latency Benchmark via public API
+        # Using unique query strings ensures cache-bypass to measure true inference latency
         bench_queries = [
-            f"Find the internship application with deadline #{i}" for i in range(num_samples)
+            f"Find the internship application deadline sample {uuid.uuid4().hex[:8]}"
+            for _ in range(num_samples)
         ] + [
-            "Where did I see the Qualcomm AI Hub documentation?",
-            "Show me the Python project I worked on yesterday",
-            "Find the document with the ₹50,000 amount",
-            "Locate the meeting notes from yesterday afternoon",
+            f"Where did I see the Qualcomm AI Hub documentation {uuid.uuid4().hex[:8]}",
+            f"Show me the Python project I worked on yesterday {uuid.uuid4().hex[:8]}",
+            f"Find the document with the ₹50,000 amount {uuid.uuid4().hex[:8]}",
+            f"Locate the meeting notes from yesterday afternoon {uuid.uuid4().hex[:8]}",
         ]
         
         warm_latencies: list[float] = []
         for q in bench_queries:
-            # Bypass cache for benchmark to measure actual provider inference time
-            start = time.perf_counter()
-            _ = model_manager.active_provider._load_model().encode(
-                q, convert_to_numpy=True, normalize_embeddings=True
-            ) if hasattr(model_manager.active_provider, "_load_model") else model_manager.active_provider.embed_text(q)
-            lat = (time.perf_counter() - start) * 1000
+            _, lat = model_manager.embed_text(q)
             warm_latencies.append(lat)
 
         avg_warm_emb = round(float(np.mean(warm_latencies)), 2)
         p95_warm_emb = round(float(np.percentile(warm_latencies, 95)), 2)
 
-        # 4. Batch Embedding Latency (Throughput per item)
+        # 4. Batch Embedding Latency (Throughput per item via public API)
         batch_size = 16
         batch_texts = [
-            f"RecallX batch indexing memory scenario entry number {i} for high throughput."
-            for i in range(batch_size)
+            f"RecallX batch indexing memory scenario entry {uuid.uuid4().hex[:8]} for high throughput."
+            for _ in range(batch_size)
         ]
         t_batch_start = time.perf_counter()
-        if hasattr(model_manager.active_provider, "_load_model"):
-            _ = model_manager.active_provider._load_model().encode(
-                batch_texts,
-                batch_size=batch_size,
-                convert_to_numpy=True,
-                normalize_embeddings=True,
-                show_progress_bar=False,
-            )
-        else:
-            _ = model_manager.active_provider.embed_batch(batch_texts)
+        _, _ = model_manager.embed_batch(batch_texts)
         batch_total_ms = (time.perf_counter() - t_batch_start) * 1000
         avg_batch_per_item = round(batch_total_ms / batch_size, 2)
 
         # 5. Vector Search Latency Alone (NumPy Cosine Retrieval)
-        dummy_query_vector = [0.05] * 384
+        dim = model_manager.active_provider.dimension or 384
+        dummy_query_vector = [0.05] * dim
         vec_search_latencies: list[float] = []
         for _ in range(10):
             t0 = time.perf_counter()
@@ -124,6 +113,8 @@ class BenchmarkService:
         # 7. End-to-End Pipeline Latency (OCR + Embedding + Full Search)
         avg_e2e = round(avg_ocr + avg_warm_emb + avg_full_search, 2)
 
+        snapdragon_validation = "verified" if is_npu_verified else "pending"
+
         metrics = BenchmarkMetrics(
             timestamp=datetime.now().isoformat(),
             processor=hw.processor,
@@ -144,6 +135,7 @@ class BenchmarkService:
             samples_count=len(bench_queries),
             status=status["status_banner"],
             runtime_state=status.get("runtime_state", "CPU_FALLBACK"),
+            snapdragon_validation=snapdragon_validation,
         )
 
         # Persist truthful results to benchmarks/results.json

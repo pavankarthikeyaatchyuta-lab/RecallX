@@ -109,7 +109,7 @@ export const MemoryDetailModal: React.FC<MemoryDetailModalProps> = ({
                 </div>
                 <div className="flex items-center gap-3 text-xs">
                   <span className="text-slate-300">
-                    Total Score: <strong>{Math.round(searchResult.score * 100)}%</strong>
+                    Relevance Score: <strong>{Math.round(searchResult.score * 100)}%</strong>
                   </span>
                   <span className="text-blue-300">
                     Semantic: {Math.round(searchResult.semantic_score * 100)}%

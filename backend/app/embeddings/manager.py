@@ -93,17 +93,20 @@ class ModelManager:
         - CPU_FALLBACK: Host is Intel/AMD or QNN provider unavailable
         """
         if self._active_provider == self.qualcomm_provider:
-            return "QNN_ACTIVE"
+            return self.qualcomm_provider.get_runtime_state()
         
         qnn_state = self.qualcomm_provider.get_runtime_state()
-        if qnn_state in ("QNN_AVAILABLE", "QNN_ERROR", "MODEL_UNAVAILABLE"):
+        if qnn_state in ("QNN_AVAILABLE", "QNN_SESSION_READY", "QNN_ERROR", "MODEL_UNAVAILABLE"):
             return qnn_state
         
         return "CPU_FALLBACK"
 
     def get_runtime_status(self) -> dict[str, Any]:
         """Detailed runtime information for UI inspection."""
-        is_qnn_active = self._active_provider == self.qualcomm_provider
+        is_qnn_active = (
+            self._active_provider == self.qualcomm_provider
+            and self.qualcomm_provider.inference_verified
+        )
         qnn_info = self.qualcomm_provider.get_info()
         cpu_info = self.cpu_provider.get_info()
         runtime_state = self.get_runtime_state()
@@ -123,6 +126,7 @@ class ModelManager:
             "is_npu_active": is_qnn_active,
             "fallback_in_use": not is_qnn_active,
             "runtime_state": runtime_state,
+            "snapdragon_validation": "Pending" if not is_qnn_active else "Verified",
             "status_banner": (
                 "Snapdragon NPU Acceleration Active"
                 if is_qnn_active

@@ -186,3 +186,48 @@ def test_capture_lifecycle_and_exclusions():
 def test_privacy_guarantee():
     hw = detect_hardware()
     assert hw.cloud_requests == 0
+    assert hasattr(hw, "qualcomm_hardware_detected")
+    assert hasattr(hw, "cpu")
+    assert hasattr(hw, "architecture")
+    if not hw.is_snapdragon:
+        assert hw.qualcomm_hardware_detected is False
+
+
+def test_capture_failure_never_creates_synthetic_memory(monkeypatch):
+    """Verifies screen capture failure returns an error and never injects fake memories."""
+    from backend.app.capture import engine
+    from backend.app.storage.database import count_memories
+
+    initial_count = count_memories()
+
+    # Force grab methods to fail / return None
+    monkeypatch.setattr("PIL.ImageGrab.grab", lambda: None)
+    if "mss" in sys.modules:
+        monkeypatch.setattr("mss.MSS.grab", lambda self, mon: None)
+
+    mem, msg = capture_service.trigger_manual_capture()
+    # Must fail cleanly and not create a memory
+    assert mem is None
+    assert "failed" in msg.lower() or "skipped" in msg.lower()
+    assert count_memories() == initial_count
+
+
+def test_vector_index_metadata_and_rebuild():
+    """Verifies vector index companion metadata and safe rebuild capabilities."""
+    from backend.app.search.vector_index import INDEX_META_FILE
+
+    # Ensure index save writes companion metadata
+    test_id = "test_meta_mem_01"
+    vector_index.add(test_id, [0.05] * 384)
+    assert INDEX_META_FILE.exists()
+
+    # Rebuild from existing memories should succeed without crashing
+    mems = memory_service.list_memories(limit=5)
+    rebuilt_count = vector_index.rebuild_from_memories(
+        memories=mems,
+        embed_fn=model_manager.embed_text,
+        model_id="all-MiniLM-L6-v2",
+        dimension=384,
+    )
+    assert rebuilt_count == len(mems)
+

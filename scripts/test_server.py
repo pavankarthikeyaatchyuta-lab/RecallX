@@ -17,9 +17,18 @@ def run_server():
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
-    t = Thread(target=run_server, daemon=True)
-    t.start()
-    time.sleep(2.5)
+    server_running = False
+    try:
+        r = requests.get("http://127.0.0.1:8000/api/health", timeout=1.0)
+        if r.status_code == 200:
+            server_running = True
+    except Exception:
+        server_running = False
+
+    if not server_running:
+        t = Thread(target=run_server, daemon=True)
+        t.start()
+        time.sleep(2.5)
 
     print("=" * 60)
     print("Testing RecallX Server Endpoints")

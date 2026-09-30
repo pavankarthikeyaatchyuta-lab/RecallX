@@ -10,7 +10,7 @@
 Modern knowledge workers navigate hundreds of tabs, documents, spreadsheets, meeting transcripts, and chat messages daily. Crucial details—deadlines, code snippets, financial figures, research papers, and login credentials—are lost in time. Existing cloud-based recall solutions compromise user trust by uploading sensitive screens to remote third-party AI clouds.
 
 ## 2. Solution
-**RecallX** captures desktop screens locally, extracts textual context using Windows native OCR, computes dense semantic embeddings on-device, and stores everything in an encrypted local database. Users query past activity using natural-language queries (e.g. *"Find the internship application with the September deadline"*), retrieving the exact screenshot, context snippet, and deterministic match explanations in milliseconds.
+**RecallX** captures desktop screens locally, extracts textual context using Windows native OCR, computes dense semantic embeddings on-device, and stores everything in a local SQLite database. Users query past activity using natural-language queries (e.g. *"Find the internship application with the September deadline"*), retrieving the exact screenshot, context snippet, and deterministic match explanations in milliseconds.
 
 ## 3. Why RecallX
 - **Zero Cloud Requests**: Never uploads a single byte or screenshot to any cloud.

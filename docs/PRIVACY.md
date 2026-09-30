@@ -3,7 +3,7 @@
 ## Core Product Promise
 > **"Your screen history stays on your device."**
 
-Privacy is not an add-on feature in RecallX; it is the fundamental architectural constraint of the entire system.
+RecallX core processing does not require external network services. Privacy is not an add-on feature in RecallX; it is the fundamental architectural constraint of the entire system.
 
 ---
 

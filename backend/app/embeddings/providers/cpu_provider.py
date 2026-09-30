@@ -2,6 +2,7 @@ from typing import Any
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
+from backend.app.embeddings.config import cpu_model_config
 from backend.app.embeddings.providers.base import EmbeddingProvider
 
 
@@ -11,10 +12,10 @@ class LocalCPUProvider(EmbeddingProvider):
     Uses all-MiniLM-L6-v2 (384-dim) via SentenceTransformers.
     """
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
+    def __init__(self, model_name: str = cpu_model_config.model_id):
         self.model_name = model_name
         self._model: SentenceTransformer | None = None
-        self._dim = 384
+        self._dim = cpu_model_config.dimension
         self._cache: dict[str, list[float]] = {}
 
     def _load_model(self) -> SentenceTransformer:

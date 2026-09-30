@@ -44,7 +44,7 @@ DEMO_SCENARIOS = [
         "id": "demo_pdf_05",
         "app": "Adobe Acrobat",
         "title": "Confidential_Product_Specification_RecallX_v2.pdf",
-        "text": "RecallX Architecture Specification.\nSection 4.2: Vector Storage & Zero-Cloud Guarantee.\nAll screen screenshots are stored in local AES encrypted vaults.\nEmbedding vectors computed on local NPU with 384 dimensions. No external telemetry or cloud vector DB allowed.",
+        "text": "RecallX Architecture Specification.\nSection 4.2: Vector Storage & Zero-Cloud Guarantee.\nAll screen screenshots are stored in local storage vaults.\nEmbedding vectors computed on local NPU with 384 dimensions. No external telemetry or cloud vector DB allowed.",
         "header_color": (220, 38, 38),
         "days_ago": 3,
     },

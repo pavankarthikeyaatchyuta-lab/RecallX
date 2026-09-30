@@ -4,6 +4,8 @@ from pydantic import BaseModel
 
 
 class HardwareInfo(BaseModel):
+    cpu: str
+    architecture: str
     os: str
     os_version: str
     processor: str
@@ -11,6 +13,7 @@ class HardwareInfo(BaseModel):
     total_ram_gb: float
     available_ram_gb: float
     is_snapdragon: bool
+    qualcomm_hardware_detected: bool
     execution_providers: list[str]
     qnn_available: bool
     cuda_available: bool
@@ -66,6 +69,8 @@ def detect_hardware() -> HardwareInfo:
         runtime_state = "CPU_FALLBACK"
 
     return HardwareInfo(
+        cpu=proc,
+        architecture=machine,
         os=os_name,
         os_version=os_ver,
         processor=proc,
@@ -73,6 +78,7 @@ def detect_hardware() -> HardwareInfo:
         total_ram_gb=total_ram,
         available_ram_gb=avail_ram,
         is_snapdragon=is_snapdragon,
+        qualcomm_hardware_detected=is_snapdragon,
         execution_providers=available_providers,
         qnn_available=qnn_available,
         cuda_available=cuda_available,

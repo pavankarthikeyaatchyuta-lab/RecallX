@@ -84,9 +84,9 @@ def capture_screen(memory_id: Optional[str] = None) -> tuple[Optional[Path], str
         except Exception:
             pass
 
-    # Strategy 3: Graceful fallback canvas if display is headless / background service
+    # If display capture failed, never fake synthetic memory
     if captured_image is None:
-        captured_image = create_simulated_canvas(app_name, window_title, timestamp_str)
+        return None, app_name, window_title, "Screen capture failed: display output unavailable."
 
     # Save image with optimal compression
     captured_image.save(target_path, "PNG", optimize=True)

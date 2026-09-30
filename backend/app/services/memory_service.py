@@ -125,5 +125,18 @@ class MemoryService:
         # Clear database
         return db_delete_all()
 
+    def sync_or_rebuild_index_if_needed(self) -> None:
+        """Ensures vector index matches active embedding model and database state."""
+        active_model = model_manager.active_provider.name
+        active_dim = model_manager.active_provider.dimension
+        memories = list_memories(limit=10000, offset=0)
+        if len(memories) > 0 and vector_index.size() == 0:
+            vector_index.rebuild_from_memories(
+                memories=memories,
+                embed_fn=model_manager.embed_text,
+                model_id=active_model,
+                dimension=active_dim,
+            )
+
 
 memory_service = MemoryService()

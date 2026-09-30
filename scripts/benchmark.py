@@ -33,6 +33,7 @@ def main():
     print(f"Model:                     {metrics.model}")
     print(f"Active Provider:           {metrics.execution_provider}")
     print(f"Runtime State:             {metrics.runtime_state}")
+    print(f"Snapdragon Validation:     {metrics.snapdragon_validation}")
     print(f"Acceleration Status:       {metrics.status}")
     print("-" * 60)
     print("Granular Pipeline Latency Breakdown:")

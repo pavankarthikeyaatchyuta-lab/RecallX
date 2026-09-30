@@ -15,6 +15,7 @@ from backend.app.api.routes import router
 from backend.app.core.config import BASE_DIR, DATA_DIR, SCREENSHOTS_DIR
 from backend.app.embeddings.manager import model_manager
 from backend.app.services.capture_service import capture_service
+from backend.app.services.memory_service import memory_service
 from backend.app.storage.database import init_db
 
 
@@ -22,6 +23,11 @@ from backend.app.storage.database import init_db
 async def lifespan(app: FastAPI):
     # Initialize database on startup
     init_db()
+    # Ensure vector index matches active embedding model
+    try:
+        memory_service.sync_or_rebuild_index_if_needed()
+    except Exception:
+        pass
     # Warm up local embedding model weights for zero first-query latency
     try:
         model_manager.warmup()
@@ -42,10 +48,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS middleware for local frontend development
+# CORS middleware restricted to local development origins
+LOCAL_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=LOCAL_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
