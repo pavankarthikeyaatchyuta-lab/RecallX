@@ -35,5 +35,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# SQLite runtime journals
+*.db-wal
+*.db-shm
+
 # Large temporary captures (Keep demo screenshots intact)
 data/screenshots/mem_*.png
