@@ -1,0 +1,51 @@
+from contextlib import asynccontextmanager
+from pathlib import Path
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from backend.app.api.routes import router
+from backend.app.core.config import BASE_DIR, DATA_DIR, SCREENSHOTS_DIR
+from backend.app.storage.database import init_db
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize database on startup
+    init_db()
+    yield
+
+
+app = FastAPI(
+    title="RecallX Local AI Engine",
+    description="Privacy-first, local-first visual memory application for Windows & Snapdragon PCs.",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+# CORS middleware for local frontend development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount screenshots directory for image previewing
+app.mount("/data/screenshots", StaticFiles(directory=str(SCREENSHOTS_DIR)), name="screenshots")
+
+# Include API routes
+app.include_router(router, prefix="/api")
+
+# Mount frontend production build if available
+FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
+if FRONTEND_DIST.exists():
+    app.mount("/", StaticFiles(directory=str(FRONTEND_DIST), html=True), name="frontend")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    init_db()
+    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=False)

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-09-30T10:58:52.857391",
+  "processor": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+  "os": "Windows 11 (10.0.26200)",
+  "model": "all-MiniLM-L6-v2",
+  "execution_provider": "PyTorch / CPU",
+  "ocr_latency_avg_ms": 90.15,
+  "embedding_latency_avg_ms": 2330.15,
+  "embedding_latency_p95_ms": 9154.25,
+  "search_latency_avg_ms": 4.87,
+  "end_to_end_avg_ms": 2425.17,
+  "samples_count": 5,
+  "status": "Qualcomm NPU unavailable \u2014 using CPU fallback."
+}
