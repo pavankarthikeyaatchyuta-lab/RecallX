@@ -12,6 +12,7 @@ class Memory(BaseModel):
     window_title: str
     ocr_latency_ms: float = 0.0
     embedding_latency_ms: float = 0.0
+    ocr_status: str = "ok"
     is_demo: bool = False
     created_at: str
 
@@ -80,10 +81,17 @@ class BenchmarkMetrics(BaseModel):
     os: str
     model: str
     execution_provider: str
-    ocr_latency_avg_ms: float
-    embedding_latency_avg_ms: float
-    embedding_latency_p95_ms: float
-    search_latency_avg_ms: float
-    end_to_end_avg_ms: float
-    samples_count: int
+    cold_start_load_ms: float = 0.0
+    warm_embedding_avg_ms: float = 0.0
+    warm_embedding_p95_ms: float = 0.0
+    batch_embedding_avg_ms_per_item: float = 0.0
+    vector_search_latency_avg_ms: float = 0.0
+    full_search_latency_avg_ms: float = 0.0
+    ocr_latency_avg_ms: float = 0.0
+    embedding_latency_avg_ms: float = 0.0
+    embedding_latency_p95_ms: float = 0.0
+    search_latency_avg_ms: float = 0.0
+    end_to_end_avg_ms: float = 0.0
+    samples_count: int = 5
     status: str
+    runtime_state: str = "CPU_FALLBACK"

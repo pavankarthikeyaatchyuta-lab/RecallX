@@ -73,11 +73,40 @@ class ModelManager:
         latency_ms = round((time.perf_counter() - start) * 1000, 2)
         return vecs, latency_ms
 
+    def warmup(self) -> float:
+        """
+        Pre-loads embedding model weights into memory and executes a warm-up inference.
+        Eliminates first-query latency penalty for the user.
+        Returns warm-up elapsed time in milliseconds.
+        """
+        start = time.perf_counter()
+        _ = self.embed_text("RecallX on-device privacy engine warmup query.")
+        return round((time.perf_counter() - start) * 1000, 2)
+
+    def get_runtime_state(self) -> str:
+        """
+        Calculates the active runtime state matching the RecallX state machine:
+        - QNN_ACTIVE: Qualcomm NPU provider is active and running
+        - QNN_AVAILABLE: Snapdragon NPU hardware and EP available, but CPU selected by user
+        - QNN_ERROR: Hardware exists but initialization failed
+        - MODEL_UNAVAILABLE: Model file missing
+        - CPU_FALLBACK: Host is Intel/AMD or QNN provider unavailable
+        """
+        if self._active_provider == self.qualcomm_provider:
+            return "QNN_ACTIVE"
+        
+        qnn_state = self.qualcomm_provider.get_runtime_state()
+        if qnn_state in ("QNN_AVAILABLE", "QNN_ERROR", "MODEL_UNAVAILABLE"):
+            return qnn_state
+        
+        return "CPU_FALLBACK"
+
     def get_runtime_status(self) -> dict[str, Any]:
         """Detailed runtime information for UI inspection."""
         is_qnn_active = self._active_provider == self.qualcomm_provider
         qnn_info = self.qualcomm_provider.get_info()
         cpu_info = self.cpu_provider.get_info()
+        runtime_state = self.get_runtime_state()
 
         return {
             "active_model": (
@@ -93,6 +122,7 @@ class ModelManager:
             "dimension": self._active_provider.dimension,
             "is_npu_active": is_qnn_active,
             "fallback_in_use": not is_qnn_active,
+            "runtime_state": runtime_state,
             "status_banner": (
                 "Snapdragon NPU Acceleration Active"
                 if is_qnn_active
@@ -104,5 +134,9 @@ class ModelManager:
             },
         }
 
+
+# Aliases for unified specification
+CPUEmbeddingProvider = LocalCPUProvider
+QualcommQNNEmbeddingProvider = QualcommQNNProvider
 
 model_manager = ModelManager()

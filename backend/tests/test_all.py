@@ -11,8 +11,10 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
+from backend.app.capture.engine import is_application_excluded
+from backend.app.core.config import SCREENSHOTS_DIR, settings
 from backend.app.core.hardware import detect_hardware
-from backend.app.embeddings.manager import model_manager
+from backend.app.embeddings.manager import CPUEmbeddingProvider, QualcommQNNEmbeddingProvider, model_manager
 from backend.app.embeddings.providers.cpu_provider import LocalCPUProvider
 from backend.app.embeddings.providers.qualcomm_provider import QualcommQNNProvider
 from backend.app.models.schemas import SearchRequest
@@ -24,6 +26,7 @@ from backend.app.search.hybrid_ranker import (
     compute_recency_score,
 )
 from backend.app.search.vector_index import vector_index
+from backend.app.services.capture_service import capture_service
 from backend.app.services.memory_service import memory_service
 from backend.app.storage.database import (
     count_memories,
@@ -45,9 +48,11 @@ def test_hardware_detection():
     assert hw.total_ram_gb > 0
     assert hw.cloud_requests == 0
     assert isinstance(hw.execution_providers, list)
+    assert hw.runtime_state in ("CPU_FALLBACK", "QNN_AVAILABLE", "QNN_ACTIVE")
     # Never claim NPU unless host is truly Snapdragon
     if not hw.is_snapdragon:
         assert hw.qnn_available is False or hw.active_runtime != "Qualcomm QNN (NPU)"
+        assert hw.runtime_state == "CPU_FALLBACK"
 
 
 def test_ocr_pipeline():
@@ -72,16 +77,25 @@ def test_embedding_providers():
     info = qnn_p.get_info()
     assert "name" in info
     assert "is_available" in info
+    assert "runtime_state" in info
     assert info["device"] == "Snapdragon NPU (Hexagon)"
+    assert CPUEmbeddingProvider == LocalCPUProvider
+    assert QualcommQNNEmbeddingProvider == QualcommQNNProvider
 
 
 def test_model_manager():
     status = model_manager.get_runtime_status()
     assert "active_model" in status
     assert "status_banner" in status
+    assert "runtime_state" in status
+    assert status["runtime_state"] in ("CPU_FALLBACK", "QNN_AVAILABLE", "QNN_ACTIVE", "QNN_ERROR", "MODEL_UNAVAILABLE")
+
     vec, lat = model_manager.embed_text("Qualcomm Snapdragon AI Challenge")
     assert len(vec) == 384
     assert lat > 0.0
+
+    warm_ms = model_manager.warmup()
+    assert warm_ms >= 0.0
 
 
 def test_vector_index():
@@ -126,23 +140,47 @@ def test_memory_crud_service():
         application_name="VS Code",
         window_title="test_all.py",
         ocr_latency_ms=5.0,
+        ocr_status="ok",
         custom_id="test_crud_mem",
     )
     assert mem.id == "test_crud_mem"
+    assert mem.ocr_status == "ok"
 
     retrieved = get_memory("test_crud_mem")
     assert retrieved is not None
     assert retrieved.application_name == "VS Code"
+    assert retrieved.ocr_status == "ok"
 
     # Search for this memory
     res = search_engine.search(SearchRequest(query="FastAPI test text", limit=5))
     ids = [r.id for r in res.results]
     assert "test_crud_mem" in ids
 
-    # Delete memory
+    # Delete memory safely
     deleted = memory_service.delete("test_crud_mem")
     assert deleted is True
     assert get_memory("test_crud_mem") is None
+
+
+def test_capture_lifecycle_and_exclusions():
+    # 1. Excluded applications check
+    assert is_application_excluded("1Password", "Vault") is True
+    assert is_application_excluded("Bank of America", "Account Summary") is True
+    assert is_application_excluded("KeePass", "Database") is True
+    assert is_application_excluded("Visual Studio Code", "main.py") is False
+
+    # 2. Lifecycle methods: start, stop, restart, shutdown
+    status_start = capture_service.start_capture()
+    assert status_start.is_capturing is True
+
+    status_stop = capture_service.stop_capture()
+    assert status_stop.is_capturing is False
+
+    status_restart = capture_service.restart_capture()
+    assert status_restart.is_capturing is True
+
+    capture_service.shutdown()
+    assert capture_service.is_capturing is False
 
 
 def test_privacy_guarantee():

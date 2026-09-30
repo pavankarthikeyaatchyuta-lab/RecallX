@@ -27,6 +27,7 @@ class MemoryService:
         application_name: str,
         window_title: str,
         ocr_latency_ms: float = 0.0,
+        ocr_status: str = "ok",
         is_demo: bool = False,
         custom_id: Optional[str] = None,
         custom_timestamp: Optional[float] = None,
@@ -53,6 +54,7 @@ class MemoryService:
             window_title=window_title,
             ocr_latency_ms=ocr_latency_ms,
             embedding_latency_ms=emb_latency_ms,
+            ocr_status=ocr_status,
             is_demo=is_demo,
             created_at=now_str,
         )
@@ -90,11 +92,13 @@ class MemoryService:
         if not mem:
             return False
 
-        # Remove screenshot image if exists
+        # Remove screenshot image if exists (safely contained in SCREENSHOTS_DIR)
         try:
-            p = Path(mem.screenshot_path)
-            if p.exists():
-                p.unlink()
+            filename = Path(mem.screenshot_path).name
+            if filename:
+                target_path = (SCREENSHOTS_DIR / filename).resolve()
+                if target_path.parent == SCREENSHOTS_DIR.resolve() and target_path.exists():
+                    target_path.unlink()
         except Exception:
             pass
 

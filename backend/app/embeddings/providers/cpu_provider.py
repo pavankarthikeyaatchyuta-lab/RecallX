@@ -105,3 +105,7 @@ class LocalCPUProvider(EmbeddingProvider):
             "is_active": True,
             "cached_items": len(self._cache),
         }
+
+
+# Aliases for unified specification
+CPUEmbeddingProvider = LocalCPUProvider

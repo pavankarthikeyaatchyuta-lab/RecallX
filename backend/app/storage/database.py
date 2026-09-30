@@ -33,6 +33,7 @@ def init_db():
                     window_title TEXT NOT NULL,
                     ocr_latency_ms REAL DEFAULT 0.0,
                     embedding_latency_ms REAL DEFAULT 0.0,
+                    ocr_status TEXT DEFAULT 'ok',
                     is_demo INTEGER DEFAULT 0,
                     created_at TEXT NOT NULL
                 );
@@ -47,6 +48,11 @@ def init_db():
                 );
                 """
             )
+            # Automatic column migration if database was created prior to ocr_status
+            cursor = conn.execute("PRAGMA table_info(memories)")
+            columns = [c[1] for c in cursor.fetchall()]
+            if "ocr_status" not in columns:
+                conn.execute("ALTER TABLE memories ADD COLUMN ocr_status TEXT DEFAULT 'ok'")
 
 
 def insert_memory(memory: Memory) -> None:
@@ -57,8 +63,8 @@ def insert_memory(memory: Memory) -> None:
                 INSERT OR REPLACE INTO memories (
                     id, timestamp, iso_timestamp, screenshot_path,
                     extracted_text, application_name, window_title,
-                    ocr_latency_ms, embedding_latency_ms, is_demo, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ocr_latency_ms, embedding_latency_ms, ocr_status, is_demo, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     memory.id,
@@ -70,6 +76,7 @@ def insert_memory(memory: Memory) -> None:
                     memory.window_title,
                     memory.ocr_latency_ms,
                     memory.embedding_latency_ms,
+                    getattr(memory, "ocr_status", "ok"),
                     1 if memory.is_demo else 0,
                     memory.created_at,
                 ),
@@ -173,6 +180,7 @@ def set_setting(key: str, value) -> None:
 
 
 def _row_to_memory(row: sqlite3.Row) -> Memory:
+    keys = row.keys()
     return Memory(
         id=row["id"],
         timestamp=row["timestamp"],
@@ -183,6 +191,7 @@ def _row_to_memory(row: sqlite3.Row) -> Memory:
         window_title=row["window_title"],
         ocr_latency_ms=row["ocr_latency_ms"],
         embedding_latency_ms=row["embedding_latency_ms"],
+        ocr_status=row["ocr_status"] if "ocr_status" in keys else "ok",
         is_demo=bool(row["is_demo"]),
         created_at=row["created_at"],
     )

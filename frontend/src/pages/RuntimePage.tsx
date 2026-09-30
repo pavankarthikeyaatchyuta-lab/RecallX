@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  AlertTriangle,
   CheckCircle,
   Cpu,
   Info,
@@ -24,6 +25,43 @@ export const RuntimePage: React.FC<RuntimePageProps> = ({
 }) => {
   const isQnn = runtime?.is_npu_active ?? false;
   const isSnapdragon = hardware?.is_snapdragon ?? false;
+  const runtimeState = runtime?.runtime_state || hardware?.runtime_state || 'CPU_FALLBACK';
+
+  const getStateBadge = (state: string) => {
+    switch (state) {
+      case 'QNN_ACTIVE':
+        return (
+          <span className="rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 text-xs font-mono font-semibold">
+            QNN_ACTIVE • Snapdragon NPU
+          </span>
+        );
+      case 'QNN_AVAILABLE':
+        return (
+          <span className="rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3 py-1 text-xs font-mono font-semibold">
+            QNN_AVAILABLE • Standby
+          </span>
+        );
+      case 'QNN_ERROR':
+        return (
+          <span className="rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-1 text-xs font-mono font-semibold">
+            QNN_ERROR • Provider Fault
+          </span>
+        );
+      case 'MODEL_UNAVAILABLE':
+        return (
+          <span className="rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 px-3 py-1 text-xs font-mono font-semibold">
+            MODEL_UNAVAILABLE • Missing ONNX
+          </span>
+        );
+      case 'CPU_FALLBACK':
+      default:
+        return (
+          <span className="rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 text-xs font-mono font-semibold">
+            CPU_FALLBACK • Active
+          </span>
+        );
+    }
+  };
 
   return (
     <div className="space-y-8 pb-16 max-w-5xl mx-auto">
@@ -31,7 +69,7 @@ export const RuntimePage: React.FC<RuntimePageProps> = ({
       <div>
         <div className="flex items-center gap-2 mb-1">
           <span className="rounded-md bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-400 border border-rose-500/20">
-            Snapdragon AI Hub
+            Qualcomm Snapdragon AI Lab
           </span>
           <span className="text-xs text-slate-500">•</span>
           <span className="text-xs text-slate-400">On-Device AI Engine</span>
@@ -50,27 +88,28 @@ export const RuntimePage: React.FC<RuntimePageProps> = ({
         className={`rounded-2xl border p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
           isQnn
             ? 'border-emerald-500/30 bg-emerald-950/20'
-            : 'border-blue-500/30 bg-blue-950/20'
+            : 'border-amber-500/30 bg-amber-950/15'
         }`}
       >
         <div className="flex items-start sm:items-center gap-3">
           <div
             className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
-              isQnn ? 'bg-emerald-500/20 text-emerald-400' : 'bg-blue-500/20 text-blue-400'
+              isQnn ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-300'
             }`}
           >
-            <Zap size={24} />
+            {isQnn ? <Zap size={24} /> : <AlertTriangle size={24} />}
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base font-bold text-white">
                 {isQnn ? 'Snapdragon Hexagon NPU: Active' : 'CPU Inference Fallback Active'}
               </h3>
+              {getStateBadge(runtimeState)}
               <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] font-mono text-slate-300">
                 {runtime?.active_provider_name || 'Local CPU Provider'}
               </span>
             </div>
-            <p className="text-xs text-slate-300 mt-0.5">
+            <p className="text-xs text-slate-300 mt-1">
               {runtime?.status_banner || 'Hardware detected truthfully with real execution provider verification.'}
             </p>
           </div>
@@ -142,7 +181,7 @@ export const RuntimePage: React.FC<RuntimePageProps> = ({
                 <span className="text-slate-200 font-medium">CPUExecutionProvider</span>
               </div>
               <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
-                Available & Ready
+                Available & Active
               </span>
             </div>
 
@@ -189,7 +228,7 @@ export const RuntimePage: React.FC<RuntimePageProps> = ({
       <div className="rounded-2xl border border-[#282c3f] bg-[#12141c] p-6 space-y-4">
         <h4 className="text-sm font-bold text-white flex items-center gap-2">
           <Info size={16} className="text-blue-400" />
-          Qualcomm AI Hub Model Abstraction
+          Qualcomm AI Hub Model Abstraction & Architecture
         </h4>
         <p className="text-xs text-slate-300 leading-relaxed">
           RecallX implements a clean provider abstraction: <code className="text-blue-300">EmbeddingProvider</code>{' '}
@@ -214,8 +253,8 @@ export const RuntimePage: React.FC<RuntimePageProps> = ({
           </div>
           <div className="p-3 rounded-xl bg-[#0c0e15] border border-[#202434]">
             <span className="text-[10px] text-slate-500 block uppercase">Active Execution Device</span>
-            <strong className="text-xs text-emerald-400 block mt-0.5">
-              {runtime?.active_device || 'CPU'}
+            <strong className="text-xs text-amber-300 block mt-0.5">
+              {runtime?.active_device || 'CPU (Fallback)'}
             </strong>
           </div>
         </div>

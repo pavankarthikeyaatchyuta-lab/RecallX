@@ -30,6 +30,7 @@ class AppSettings(BaseModel):
             "Bitwarden",
             "LastPass",
             "Banking",
+            "Bank",
             "Private Browsing",
             "Incognito",
         ]

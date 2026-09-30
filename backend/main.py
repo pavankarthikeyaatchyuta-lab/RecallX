@@ -6,6 +6,8 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.app.api.routes import router
 from backend.app.core.config import BASE_DIR, DATA_DIR, SCREENSHOTS_DIR
+from backend.app.embeddings.manager import model_manager
+from backend.app.services.capture_service import capture_service
 from backend.app.storage.database import init_db
 
 
@@ -13,7 +15,17 @@ from backend.app.storage.database import init_db
 async def lifespan(app: FastAPI):
     # Initialize database on startup
     init_db()
+    # Warm up local embedding model weights for zero first-query latency
+    try:
+        model_manager.warmup()
+    except Exception:
+        pass
     yield
+    # Gracefully terminate background capture loop on application exit
+    try:
+        capture_service.shutdown()
+    except Exception:
+        pass
 
 
 app = FastAPI(

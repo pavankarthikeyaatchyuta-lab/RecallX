@@ -127,31 +127,49 @@ python scripts/seed_demo.py
 
 ---
 
-## 11. Benchmarking
-Run the live benchmark suite to measure on-device latency:
+## 11. Benchmarking & Evaluation
+Run live on-device benchmarks and retrieval quality evaluations:
 ```powershell
+# Measure granular latency (cold start, warm query, batch, vector retrieval)
 python scripts/benchmark.py
+
+# Evaluate Top-1 and Top-3 search accuracy over synthetic memory set
+python scripts/evaluate_search.py
+
+# Run Qualcomm Snapdragon QNN benchmark harness (or check hardware readiness)
+python scripts/qualcomm_benchmark.py
 ```
-Results are exported to `benchmarks/results.json`.
+Benchmark numbers are stored in `benchmarks/results.json`.
 
 ---
 
 ## 12. Automated Testing
-Run automated unit, integration, and offline tests:
+Run automated unit, integration, and offline privacy tests:
 ```powershell
-# Run Pytest suite (8 unit & integration tests)
+# Run Pytest suite (9 unit & integration tests)
 python -m pytest backend/tests/test_all.py
 
 # Run End-to-End Smoke Test
 python scripts/smoke_test.py
 
-# Run Socket-Level Offline Mode Test
+# Run Socket-Level Offline Mode Verification (0 outbound packets)
 python scripts/offline_test.py
 ```
 
 ---
 
-## 13. Project Structure
+## 13. Documentation Suite
+Detailed technical documentation and submission materials:
+- [**Final Development Report**](docs/FINAL_DEVELOPMENT_REPORT.md): System architecture, tradeoffs, performance profile, and design rationale.
+- [**Final Pre-Submission Audit**](docs/FINAL_AUDIT.md): Comprehensive claim-by-claim verification, latency disaggregation, and evaluation results.
+- [**Qualcomm Validation Checklist**](docs/QUALCOMM_VALIDATION_CHECKLIST.md): Step-by-step procedures for deploying and testing on Snapdragon X Elite hardware.
+- [**Architecture Guide**](docs/ARCHITECTURE.md): Complete backend and frontend data flow diagrams.
+- [**Privacy Architecture**](docs/PRIVACY.md): Local-only guarantees and zero-telemetry enforcement.
+- [**Qualcomm AI Hub Setup**](docs/QUALCOMM_SETUP.md): Exporting models from Qualcomm AI Hub for Hexagon NPU.
+
+---
+
+## 14. Project Structure
 ```
 recallx/
 ├── backend/
@@ -169,7 +187,8 @@ recallx/
 │   └── main.py                    # Entry point & static SPA server
 │
 ├── frontend/
-│   ├── src/                       # React, TypeScript, Tailwind components
+│   ├── src/                       # React 19, TypeScript, Tailwind components
+│   ├── dist/                      # Pre-built SPA assets served by FastAPI
 │   ├── package.json
 │   └── vite.config.ts
 │
@@ -179,10 +198,12 @@ recallx/
 │   ├── demo/                      # Demo artifacts
 │   └── recallx.db                 # SQLite database
 │
-├── benchmarks/results.json        # Real benchmark numbers
+├── benchmarks/results.json        # Real benchmark measurements
 ├── scripts/
-│   ├── benchmark.py               # Benchmark runner
-│   ├── seed_demo.py               # Demo memory generator
+│   ├── benchmark.py               # Granular latency profiler
+│   ├── evaluate_search.py         # Top-1 & Top-3 retrieval evaluator
+│   ├── qualcomm_benchmark.py      # Snapdragon NPU benchmark harness
+│   ├── seed_demo.py               # Demo memory generator (16 scenarios)
 │   ├── offline_test.py            # Zero-cloud verification
 │   └── smoke_test.py              # End-to-end pipeline tester
 │

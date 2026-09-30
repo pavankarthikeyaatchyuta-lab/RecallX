@@ -16,6 +16,7 @@ class HardwareInfo(BaseModel):
     cuda_available: bool
     active_runtime: str
     acceleration_status: str
+    runtime_state: str = "CPU_FALLBACK"
     cloud_requests: int = 0
 
 
@@ -54,12 +55,15 @@ def detect_hardware() -> HardwareInfo:
     if is_snapdragon and qnn_available:
         acceleration_status = "Snapdragon AI acceleration available (QNN NPU Active)"
         active_runtime = "Qualcomm QNN (NPU)"
+        runtime_state = "QNN_ACTIVE"
     elif is_snapdragon and not qnn_available:
         acceleration_status = "Snapdragon hardware detected — QNN Execution Provider not active, using CPU fallback"
         active_runtime = "CPU Fallback"
+        runtime_state = "CPU_FALLBACK"
     else:
         acceleration_status = "Development mode: Qualcomm NPU unavailable — using CPU fallback"
         active_runtime = "CPU"
+        runtime_state = "CPU_FALLBACK"
 
     return HardwareInfo(
         os=os_name,
@@ -74,5 +78,6 @@ def detect_hardware() -> HardwareInfo:
         cuda_available=cuda_available,
         active_runtime=active_runtime,
         acceleration_status=acceleration_status,
+        runtime_state=runtime_state,
         cloud_requests=0,
     )

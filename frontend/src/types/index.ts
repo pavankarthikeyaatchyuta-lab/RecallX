@@ -8,6 +8,7 @@ export interface Memory {
   window_title: string;
   ocr_latency_ms: number;
   embedding_latency_ms: number;
+  ocr_status?: string;
   is_demo: boolean;
   created_at: string;
 }
@@ -49,6 +50,7 @@ export interface HardwareInfo {
   cuda_available: boolean;
   active_runtime: string;
   acceleration_status: string;
+  runtime_state?: string;
   cloud_requests: number;
 }
 
@@ -60,6 +62,7 @@ export interface RuntimeStatus {
   dimension: number;
   is_npu_active: boolean;
   fallback_in_use: boolean;
+  runtime_state?: string;
   status_banner: string;
   providers: {
     qualcomm: {
@@ -113,6 +116,12 @@ export interface BenchmarkMetrics {
   os: string;
   model: string;
   execution_provider: string;
+  cold_start_load_ms?: number;
+  warm_embedding_avg_ms?: number;
+  warm_embedding_p95_ms?: number;
+  batch_embedding_avg_ms_per_item?: number;
+  vector_search_latency_avg_ms?: number;
+  full_search_latency_avg_ms?: number;
   ocr_latency_avg_ms: number;
   embedding_latency_avg_ms: number;
   embedding_latency_p95_ms: number;
@@ -120,6 +129,7 @@ export interface BenchmarkMetrics {
   end_to_end_avg_ms: number;
   samples_count: number;
   status: string;
+  runtime_state?: string;
 }
 
 export type PageId = 'home' | 'search' | 'memories' | 'runtime' | 'benchmarks' | 'privacy';

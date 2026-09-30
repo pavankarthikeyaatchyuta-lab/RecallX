@@ -41,6 +41,7 @@ class CaptureService:
 
             # OCR step
             extracted_text, ocr_latency = ocr_engine.extract_text(img_path)
+            ocr_status = "ok" if extracted_text.strip() else "no_text"
 
             # Store memory
             relative_screenshot_path = f"/data/screenshots/{img_path.name}"
@@ -50,6 +51,7 @@ class CaptureService:
                 application_name=app_name,
                 window_title=win_title,
                 ocr_latency_ms=ocr_latency,
+                ocr_status=ocr_status,
                 is_demo=False,
             )
 
@@ -82,6 +84,18 @@ class CaptureService:
             settings.capture_enabled = False
             self._stop_event.set()
             return self.get_status()
+
+    def restart_capture(self) -> CaptureStatus:
+        """Safely restarts the background capture loop with updated settings."""
+        self.stop_capture()
+        time.sleep(0.05)
+        return self.start_capture()
+
+    def shutdown(self) -> None:
+        """Gracefully terminates background capture threads on application exit."""
+        self.stop_capture()
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=2.0)
 
     def _capture_loop(self):
         while not self._stop_event.is_set():
